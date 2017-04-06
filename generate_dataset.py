@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import csv
 from datetime import date, timedelta
 from pickle import dump, load
@@ -11,7 +13,7 @@ from yahoo_finance import Share
 
 INDEX_NAMES = {'Nasdaq': '^IXIC', 'Dow Jones': '^DJI', 'S&P 500': '^GSPC'}
 
-def generate_wh_data():
+def generate_wh_data(n):
 	"""
 	Pulls White House Posts and writes them to 
 	data/WH_posts.csv
@@ -20,12 +22,12 @@ def generate_wh_data():
 	post_urls = []
 	url = "https://www.whitehouse.gov"
 
-	# 50 pages of posts
-	for i in np.arange(50):
+	print("Pulling White House posts")
+	for i in np.arange(n):
 	    #grab url and append page number
 	    page_url = url + "/blog?page=" + str(i)
 	    r = requests.get(page_url)
-	    soup = bs4.BeautifulSoup(r.content.decode('utf-8'), "lxml")
+	    soup = bs4.BeautifulSoup(r.content.decode('utf-8'), "html.parser")
 	    # h3 field-content is the tag to get post urls
 	    page_posts = soup.find_all("h3", "field-content")
 	    # dates for the posts
@@ -39,9 +41,10 @@ def generate_wh_data():
 	posts = []
 
 	# loop through every post and get text in post
+	print("Parsing each post")
 	for post_data in all_posts:
 	    req = requests.get(url + post_data[1])
-	    req_soup = bs4.BeautifulSoup(req.text, "lxml")
+	    req_soup = bs4.BeautifulSoup(req.text, "html.parser")
 	    post_body = req_soup.find("div","pane-entity-field").text\
 	    .encode('ascii', 'ignore').decode('UTF-8').replace("\n", "").replace("\t", "")
 	    posts.append(post_body)
@@ -49,6 +52,7 @@ def generate_wh_data():
 	df_out = pd.DataFrame({'a': [post[2].strip() for post in all_posts], 'b': [post[0] for post in all_posts], 'c': [post.strip() for post in posts]})
 	df_out.columns = ['Date', 'Title', 'Body']
 
+	print("Writing data/WH_posts.csv")
 	df_out.to_csv('data/WH_posts.csv', index=False)
 	return df_out
 
@@ -65,7 +69,7 @@ def get_stock_values(stock_abbrv):
     return df
 
 
-def create_dataset(regenerate=False):
+def create_dataset(regenerate=False, n=50):
     """
     Pulls closing values from Yahoo finance and
     matches those values to white house posts using
@@ -74,7 +78,7 @@ def create_dataset(regenerate=False):
     """
 
     if regenerate:
-    	wh_df = generate_wh_data()
+    	wh_df = generate_wh_data(n)
     else:
     	wh_df = pd.read_csv('data/WH_posts.csv')
     wh_df['Date'] = pd.to_datetime(wh_df['Date'])
@@ -104,5 +108,13 @@ def create_dataset(regenerate=False):
     
     
 if __name__ == "__main__":
-	create_dataset()
+	from argparse import ArgumentParser
+	parser = ArgumentParser(description='White House Post and Stock Market Collector')
+	parser.add_argument('-r', '--regen', action='store_true',
+                    help='Regenerates WH_post.csv')
+	parser.add_argument('-n', '--num_pages', type=int,
+					help='Number of pages to pull')
+	args = parser.parse_args()
+
+	create_dataset(regenerate=args.regen, n=args.num_pages)
     

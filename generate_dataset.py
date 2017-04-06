@@ -12,6 +12,10 @@ from yahoo_finance import Share
 INDEX_NAMES = {'Nasdaq': '^IXIC', 'Dow Jones': '^DJI', 'S&P 500': '^GSPC'}
 
 def generate_wh_data():
+	"""
+	Pulls White House Posts and writes them to 
+	data/WH_posts.csv
+	"""
 	# new list to append urls
 	post_urls = []
 	url = "https://www.whitehouse.gov"
@@ -48,6 +52,7 @@ def generate_wh_data():
 	df_out.to_csv('data/WH_posts.csv', index=False)
 	return df_out
 
+
 def get_stock_values(stock_abbrv):
     """
     Given the stock abbrevation, this function
@@ -58,6 +63,7 @@ def get_stock_values(stock_abbrv):
     share_history = share.get_historical('2016-12-25', date.isoformat(date.today()))
     df = pd.DataFrame([[s['Date'], float(s['Close'])] for s in share_history], columns=['Date', 'Value'])
     return df
+
 
 def create_dataset(regenerate=False):
     """
@@ -92,7 +98,7 @@ def create_dataset(regenerate=False):
         stock_df = pd.merge(stock_df, processed_stock_dfs[i], how='inner', on=['Date'])
     
     dataset = pd.merge(wh_df, stock_df, how='inner', on=['Date'])
-    dataset.to_csv('data/dataset.csv')
+    dataset.to_csv('data/dataset.csv', index=False)
     
     return dataset.sort_values(by='Date').reset_index(drop=True)
     

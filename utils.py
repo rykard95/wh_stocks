@@ -1,5 +1,6 @@
 import pandas as pd
 
+
 def join_blog_posts_on_date(df):
     posts = {}
     titles = {}
@@ -37,12 +38,13 @@ def join_blog_posts_on_date(df):
     dataset = pd.merge(dataset, nd_deltas, how='inner', on=['Date'])
     dataset = pd.merge(dataset, sp_deltas, how='inner', on=['Date'])
 
-    dataset['Body'] = dataset['Body'].str.replace('\d+', '')
-    dataset['Title'] = dataset['Title'].str.replace('\d+', '')
-    dataset['Mean'] = (dataset['Dow Jones Delta'] + dataset['Nasdaq Delta'] + dataset['S&P 500 Delta']) / 3
+    dataset['Body'] = dataset['Body'].str.replace('\d+', '').str.replace('[^a-zA-Z ]', '')
+    dataset['Title'] = dataset['Title'].str.replace('\d+', '').str.replace('[^a-zA-Z ]', '')
+    dataset['Mean Delta'] = (dataset['Dow Jones Delta'] + dataset['Nasdaq Delta'] + dataset['S&P 500 Delta']) / 3
     dataset['Mean Proportion'] = (dataset['Dow Jones Proportion'] +
                                   dataset['Nasdaq Proportion'] +
                                   dataset['S&P 500 Proportion']) / 3
-    dataset['Labels'] = (dataset['Mean'] >= 0)
+    dataset['Label'] = (dataset['Mean Proportion'] >= 0).apply(int)
+    dataset['Label'] = 2 * dataset['Label'] - 1
 
     return dataset

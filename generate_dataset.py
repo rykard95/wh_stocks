@@ -53,7 +53,6 @@ def generate_wh_data(n):
     df_out.to_csv('data/WH_posts.csv', index=False)
     return df_out
 
-
 def get_stock_values(stock_abbrv):
     """
     Given the stock abbrevation, this function
@@ -64,7 +63,6 @@ def get_stock_values(stock_abbrv):
     share_history = share.get_historical('2016-12-25', date.isoformat(date.today()))
     df = pd.DataFrame([[s['Date'], float(s['Close'])] for s in share_history], columns=['Date', 'Value'])
     return df
-
 
 def create_dataset(regenerate=False, n=50):
     """

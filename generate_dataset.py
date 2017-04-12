@@ -90,6 +90,7 @@ def create_dataset(regenerate=False, n=50):
         stock_df.sort_values(by='Date')
 
         stock_df[name + ' Delta'] = -stock_df[name + ' Value'].diff(periods=1)
+        stock_df[name + ' Proportion'] = stock_df[name + ' Delta'] / stock_df[name + ' Value']
         processed_stock_dfs.append(stock_df)
 
 

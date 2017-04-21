@@ -23,7 +23,11 @@ def generate_wh_data(n):
     for i in np.arange(n):
         #grab url and append page number
         page_url = url + "/blog?page=" + str(i)
-        r = requests.get(page_url)
+        try:
+            r = requests.get(page_url)
+        except requests.exceptions.ConnectionError:
+            break
+
         soup = bs4.BeautifulSoup(r.content.decode('utf-8'), "html.parser")
         # h3 field-content is the tag to get post urls
         page_posts = soup.find_all("h3", "field-content")

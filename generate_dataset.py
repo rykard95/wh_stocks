@@ -12,7 +12,7 @@ INDEX_NAMES = {'Nasdaq': '^IXIC', 'Dow Jones': '^DJI', 'S&P 500': '^GSPC'}
 
 def generate_wh_data(n):
     """
-    Pulls White House Posts and writes them to 
+    Pulls White House Posts and writes them to
     data/WH_posts.csv
     """
     # new list to append urls
@@ -44,11 +44,12 @@ def generate_wh_data(n):
     # loop through every post and get text in post
     print("Parsing each post")
     for post_data in all_posts:
-        req = requests.get(url + post_data[1])
-        req_soup = bs4.BeautifulSoup(req.text, "html.parser")
-        post_body = req_soup.find("div","pane-entity-field").text\
-        .encode('ascii', 'ignore').decode('UTF-8').replace("\n", "").replace("\t", "")
-        posts.append(post_body)
+        req = requests.get(url + post_data[1], allow_redirects=False)
+        if req.status_code == 200:
+            req_soup = bs4.BeautifulSoup(req.text, "html.parser")
+            post_body = req_soup.find("div","pane-entity-field").text\
+            .encode('ascii', 'ignore').decode('UTF-8').replace("\n", "").replace("\t", "")
+            posts.append(post_body)
 
     df_out = pd.DataFrame({'a': [post[2].strip() for post in all_posts], 'b': [post[0] for post in all_posts], 'c': [post.strip() for post in posts]})
     df_out.columns = ['Date', 'Title', 'Body']
@@ -60,7 +61,7 @@ def generate_wh_data(n):
 def get_stock_values(stock_abbrv):
     """
     Given the stock abbrevation, this function
-    will pull from Yahoo Finance the history of that 
+    will pull from Yahoo Finance the history of that
     stock from 2016-12-25 to present day
     """
     share = Share(stock_abbrv)
@@ -105,8 +106,8 @@ def create_dataset(regenerate=False, n=50):
     dataset.to_csv('data/dataset.csv', index=False)
 
     return dataset.sort_values(by='Date').reset_index(drop=True)
-    
-    
+
+
 if __name__ == "__main__":
     from argparse import ArgumentParser
     parser = ArgumentParser(description='White House Post and Stock Market Collector')

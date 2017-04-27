@@ -73,7 +73,7 @@ def significance_labeller(df, delta='Dow Jones Delta'):
 
 
 def featurize(df, k=100, text='Body', ngram=1):
-    vectorizer = CountVectorizer(stop_words='english', ngram_range=(1, ngram))
+    vectorizer = CountVectorizer(stop_words='english', ngram_range=(1, ngram), max_df=0.8, min_df=0.1)
     vectorizer.fit(df[text])
     words = vectorizer.get_feature_names()
     data = vectorizer.transform(df[text])

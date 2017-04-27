@@ -45,7 +45,9 @@ def generate_wh_data(n):
     print("Parsing each post")
     for post_data in all_posts:
         req = requests.get(url + post_data[1], allow_redirects=False)
-        if req.status_code == 200:
+        if req.status_code != 200:
+            all_posts.remove(post_data)
+        else:
             req_soup = bs4.BeautifulSoup(req.text, "html.parser")
             post_body = req_soup.find("div","pane-entity-field").text\
             .encode('ascii', 'ignore').decode('UTF-8').replace("\n", "").replace("\t", "")

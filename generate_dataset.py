@@ -6,6 +6,7 @@ import pandas as pd
 import requests
 import bs4
 from yahoo_finance import Share
+import scipy
 
 
 INDEX_NAMES = {'Nasdaq': '^IXIC', 'Dow Jones': '^DJI', 'S&P 500': '^GSPC'}
@@ -23,7 +24,7 @@ def generate_wh_data(n, president='trump'):
     else:
         url = "https://www.whitehouse.gov"
         s = 0
-        
+
     print("Pulling White House posts from " + url)
     for i in np.arange(s, n):
         #grab url and append page number
@@ -51,15 +52,13 @@ def generate_wh_data(n, president='trump'):
     print("Parsing each post")
     for post_data in all_posts:
         req = requests.get(url + post_data[1], allow_redirects=False)
-        if req.status_code != 200:
-            all_posts.remove(post_data)
-        else:
+        if req.status_code == 200:
             req_soup = bs4.BeautifulSoup(req.text, "html.parser")
             post_body = req_soup.find("div","pane-entity-field").text\
             .encode('ascii', 'ignore').decode('UTF-8').replace("\n", "").replace("\t", "")
-            posts.append(post_body)
+            posts.append([post_data[2].strip(), post_data[0], post_body.strip()])
 
-    df_out = pd.DataFrame({'a': [post[2].strip() for post in all_posts], 'b': [post[0] for post in all_posts], 'c': [post.strip() for post in posts]})
+    df_out = pd.DataFrame({'a': [post[0] for post in posts], 'b': [post[1] for post in posts], 'c': [post[2] for post in posts]})
     df_out.columns = ['Date', 'Title', 'Body']
 
     print("Writing data/WH_posts.csv")
@@ -75,6 +74,7 @@ def get_stock_values(stock_abbrv):
     share = Share(stock_abbrv)
     share_history = share.get_historical('2016-12-25', date.isoformat(date.today()))
     df = pd.DataFrame([[s['Date'], float(s['Close'])] for s in share_history], columns=['Date', 'Value'])
+    df['Z-Score'] = stats.zscore(df['Value'])
     return df
 
 def create_dataset(regenerate=False, n=50, president='trump'):

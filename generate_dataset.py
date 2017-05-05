@@ -10,22 +10,28 @@ from yahoo_finance import Share
 
 INDEX_NAMES = {'Nasdaq': '^IXIC', 'Dow Jones': '^DJI', 'S&P 500': '^GSPC'}
 
-def generate_wh_data(n):
+def generate_wh_data(n, president='trump'):
     """
     Pulls White House Posts and writes them to
     data/WH_posts.csv
     """
     # new list to append urls
     post_urls = []
-    url = "https://www.whitehouse.gov"
-
-    print("Pulling White House posts")
-    for i in np.arange(n):
+    if president == 'obama':
+        url = "https://www.obamawhitehouse.archives.gov"
+        s = 1
+    else:
+        url = "https://www.whitehouse.gov"
+        s = 0
+        
+    print("Pulling White House posts from " + url)
+    for i in np.arange(s, n):
         #grab url and append page number
         page_url = url + "/blog?page=" + str(i)
         try:
             r = requests.get(page_url)
         except requests.exceptions.ConnectionError:
+            print('There was a connection error')
             break
 
         soup = bs4.BeautifulSoup(r.content.decode('utf-8'), "html.parser")
@@ -71,7 +77,7 @@ def get_stock_values(stock_abbrv):
     df = pd.DataFrame([[s['Date'], float(s['Close'])] for s in share_history], columns=['Date', 'Value'])
     return df
 
-def create_dataset(regenerate=False, n=50):
+def create_dataset(regenerate=False, n=50, president='trump'):
     """
     Pulls closing values from Yahoo finance and
     matches those values to white house posts using
@@ -80,7 +86,7 @@ def create_dataset(regenerate=False, n=50):
     """
 
     if regenerate:
-        wh_df = generate_wh_data(n)
+        wh_df = generate_wh_data(n, president)
     else:
         wh_df = pd.read_csv('data/WH_posts.csv')
     wh_df['Date'] = pd.to_datetime(wh_df['Date'])
@@ -105,7 +111,7 @@ def create_dataset(regenerate=False, n=50):
         stock_df = pd.merge(stock_df, processed_stock_dfs[i], how='inner', on=['Date'])
 
     dataset = pd.merge(wh_df, stock_df, how='inner', on=['Date'])
-    dataset.to_csv('data/dataset.csv', index=False)
+    dataset.to_csv('data/dataset-' + president + '.csv', index=False)
 
     return dataset.sort_values(by='Date').reset_index(drop=True)
 
@@ -117,6 +123,8 @@ if __name__ == "__main__":
                     help='Regenerates WH_post.csv')
     parser.add_argument('-n', '--num_pages', type=int,
                     help='Number of pages to pull')
+    parser.add_argument('-p', '--president', type=str,
+                       help='trump or obama')
     args = parser.parse_args()
 
-    create_dataset(regenerate=args.regen, n=args.num_pages)
+    create_dataset(regenerate=args.regen, n=args.num_pages, president=args.president)

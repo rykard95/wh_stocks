@@ -7,6 +7,7 @@ import requests
 import bs4
 from yahoo_finance import Share
 import scipy
+from scipy import stats
 
 
 INDEX_NAMES = {'Nasdaq': '^IXIC', 'Dow Jones': '^DJI', 'S&P 500': '^GSPC'}
@@ -37,7 +38,10 @@ def generate_wh_data(n, president='trump'):
 
         soup = bs4.BeautifulSoup(r.content.decode('utf-8'), "html.parser")
         # h3 field-content is the tag to get post urls
-        page_posts = soup.find_all("h3", "field-content")
+        if president == 'obama':
+            page_posts = soup.find_all("h3", "field-content")
+        else:
+            page_posts = soup.find_all("h3", "field-content")
         # dates for the posts
         post_dates = soup.find_all("span", "field-content")
         # append page's post urls to our list
@@ -49,7 +53,7 @@ def generate_wh_data(n, president='trump'):
     posts = []
 
     # loop through every post and get text in post
-    print("Parsing each post")
+    print("Parsing %d posts" % (len(all_posts)))
     for post_data in all_posts:
         req = requests.get(url + post_data[1], allow_redirects=False)
         if req.status_code == 200:
@@ -60,7 +64,7 @@ def generate_wh_data(n, president='trump'):
 
     df_out = pd.DataFrame({'a': [post[0] for post in posts], 'b': [post[1] for post in posts], 'c': [post[2] for post in posts]})
     df_out.columns = ['Date', 'Title', 'Body']
-
+    df_out = df_out.sort_values(by='Date', ascending=False)
     print("Writing data/WH_posts.csv")
     df_out.to_csv('data/WH_posts.csv', index=False)
     return df_out
